@@ -12,11 +12,13 @@
 //      can use methods like println(), printf(), and so on,
 //      which all go through the overriden write() method.
 
-
 #pragma once
 
-#define WITH_ILI9431_FONTS   1
-	// set to 1 to use Paul Stoffregens's ILI9431_t3 fonts
+#ifdef __MK66FX1M0_		// teensy specific
+	#define WITH_ILI9431_FONTS   1
+#else
+	#define WITH_ILI9431_FONTS   10
+#endif
 
 #if ARDUINO >= 100
 	#include "Arduino.h"

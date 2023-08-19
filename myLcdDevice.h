@@ -61,7 +61,7 @@
 
 
 extern void setTFTDataPins(int p0,int p1,int p2,int p3,int p4,int p5,int p6,int p7);
-	// prh addition
+	// prh addition is really teensy only
 
 
 typedef struct _lcd_info
@@ -83,48 +83,49 @@ public:
 
 	void Set_Rotation(uint8_t r);
 
-	int16_t Get_Height(void) const;
-  	int16_t Get_Width(void) const;
+	int16_t Get_Width(void) const    { return width; }
+	int16_t Get_Height(void) const   { return height; }
+	uint8_t Get_Rotation(void) const { return rotation; }
+		// get current rotation
+		// 0  :  0 degree
+		// 1  :  90 degree
+		// 2  :  180 degree
+		// 3  :  270 degree
 
-	void Fill_Rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+
+	virtual void Fill_Rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) override;
 
 private:	// available to base class via virtual calls
 
+	virtual uint16_t Color_To_565(uint8_t r, uint8_t g, uint8_t b) override;
+	virtual void 	 Draw_Pixel(int16_t x, int16_t y, uint16_t color) override;
 	virtual void 	 Set_Addr_Window(int16_t x1, int16_t y1, int16_t x2, int16_t y2) override;
 	virtual void 	 Push_Any_Color(uint16_t * block, int16_t n, bool first, uint8_t flags) override;
 	virtual int16_t  Read_GRAM(int16_t x, int16_t y, uint16_t *block, int16_t w, int16_t h) override;
-	virtual void 	 Draw_Pixel(int16_t x, int16_t y, uint16_t color) override;
-	virtual uint16_t Color_To_565(uint8_t r, uint8_t g, uint8_t b) override;
 
-private: 	// was public - can be eliminated if it makes sense
 
+private:  // was public
 
 	myLcdDevice(int16_t wid,int16_t heg,uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd, uint8_t reset);
 
 	void reset(void);
 	void start(uint16_t ID);
+	void init_table8(const void *table, int16_t size);
+	void init_table16(const void *table, int16_t size);
 
-	uint16_t Read_ID(void);
+	void Set_LR(void);
+	void Invert_Display(boolean i);
+	void Vert_Scroll(int16_t top, int16_t scrollines, int16_t offset);	// useless
+	void dimScreen(); // prh addition = set all pixels to half their value
 
 	void Write_Cmd(uint16_t cmd);
 	void Write_Data(uint16_t data);
 	void Write_Cmd_Data(uint16_t cmd, uint16_t data);
-	uint16_t Read_Reg(uint16_t reg, int8_t index);
-
-	void init_table8(const void *table, int16_t size);
-	void init_table16(const void *table, int16_t size);
-
 	void Push_Command(uint16_t cmd, uint8_t *block, int8_t N);
 	void Push_Any_Color(uint8_t * block, int16_t n, bool first, uint8_t flags);
 
-
-
-	void 	Set_LR(void);
-	uint8_t Get_Rotation(void) const;
-	void Invert_Display(boolean i);	// prh - useless
-	void Vert_Scroll(int16_t top, int16_t scrollines, int16_t offset);		// prh - useles
-	void dim();	// prh addition = added myLcdDevice::dim() unused method
-		// set all pixels to half their value
+	uint16_t Read_ID(void);
+	uint16_t Read_Reg(uint16_t reg, int8_t index);
 
 
 private:	// was protected
