@@ -7,6 +7,8 @@
 #include "myLcdFont.c"
 #include <myDebug.h>
 
+#define dbg_la		0
+
 #define DEBUG_DRAW_FONT_CHAR   0
 
 #define MAX_PRINT_LEN  1023
@@ -93,9 +95,8 @@ void myLcd::print_justified(
 		// we can break the passed in string into lines at \n's
 		// for calling Print_String ...
 
-	#if DEBUG_DRAW_FONT_CHAR
-		Serial.printf("print_justified(%d,%d,%d,%d,  %d, 0x%04x, 0x%04x, %d, \"%s\")\n", x, start_y,w,h,just,fc,bc,use_bc,text);
-	#endif
+
+	display(dbg_la,"print_justified(%d,%d,%d,%d,  %d, 0x%04x, 0x%04x, %d, \"%s\")", x, start_y, w, h, just, fc, bc, use_bc, text);
 
 	Set_Text_colour(fc);
 	if (use_bc)
@@ -199,9 +200,7 @@ void myLcd::print_justified(
 		uint32_t bitoffset;
 		const uint8_t *data;
 
-		#if DEBUG_DRAW_FONT_CHAR
-			Serial.printf("drawFontChar %d at x=%d y=%d\n", c,text_x,text_y);
-		#endif
+		display(dbg_la,"drawFontChar %d='%c' at x=%d y=%d", c, (c>32?c:32), text_x, text_y);
 
 		if (c >= font->index1_first && c <= font->index1_last)
 		{
@@ -446,5 +445,3 @@ int myLcd::getTextExtent(const char *text)
 
 	return len * text_size * 6;
 }
-
-
