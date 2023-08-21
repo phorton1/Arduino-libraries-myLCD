@@ -11,22 +11,8 @@
 #pragma once
 
 
-#if ARDUINO >= 100
-	#include "Arduino.h"
-#else
-	#include "WProgram.h"
-#endif
-
-#ifdef __AVR__
-	#include <avr/pgmspace.h>
-#elif defined(ESP8266) || defined(__MK66FX1M0__)	// prh - eliminate teensy warnings
-	#include <pgmspace.h>
-#else
-	#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
-	#define pgm_read_word(addr) (*(const unsigned short *)(addr))
-#endif
-
 #include "myLcd.h"
+
 
 // LCD controller chip identifiers
 
@@ -79,29 +65,29 @@ public:
 
 	myLcdDevice(uint16_t model,uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd, uint8_t reset);
 
-	void Init_LCD(void);
+	void begin(void);
 
-	void Set_Rotation(uint8_t r);
+	void setRotation(uint8_t r);
 
-	int16_t Get_Width(void) const    { return width; }
-	int16_t Get_Height(void) const   { return height; }
-	uint8_t Get_Rotation(void) const { return rotation; }
-		// get current rotation
+	int16_t width(void) const    { return _width; }
+	int16_t height(void) const   { return _height; }
+	uint8_t getRotation(void) const { return _rotation; }
+		// get current _rotation
 		// 0  :  0 degree
 		// 1  :  90 degree
 		// 2  :  180 degree
 		// 3  :  270 degree
 
 
-	virtual void Fill_Rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) override;
+	virtual void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) override;
 
 private:	// available to base class via virtual calls
 
-	virtual uint16_t Color_To_565(uint8_t r, uint8_t g, uint8_t b) override;
-	virtual void 	 Draw_Pixel(int16_t x, int16_t y, uint16_t color) override;
-	virtual void 	 Set_Addr_Window(int16_t x1, int16_t y1, int16_t x2, int16_t y2) override;
-	virtual void 	 Push_Any_Color(uint16_t * block, int16_t n, bool first, uint8_t flags) override;
-	virtual int16_t  Read_GRAM(int16_t x, int16_t y, uint16_t *block, int16_t w, int16_t h) override;
+	virtual uint16_t color565(uint8_t r, uint8_t g, uint8_t b) override;
+	virtual void 	 drawPixel(int16_t x, int16_t y, uint16_t color) override;
+	virtual void 	 setAddrWindow(int16_t x1, int16_t y1, int16_t x2, int16_t y2) override;
+	virtual void 	 pushAnyColor(uint16_t * block, int16_t n, bool first, uint8_t flags) override;
+	virtual int16_t  readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *block) override;
 
 
 private:  // was public
@@ -113,28 +99,25 @@ private:  // was public
 	void init_table8(const void *table, int16_t size);
 	void init_table16(const void *table, int16_t size);
 
-	void Set_LR(void);
-	void Invert_Display(boolean i);
-	void Vert_Scroll(int16_t top, int16_t scrollines, int16_t offset);	// useless
+	void setLR(void);
+	void invertDisplay(boolean i);
+	void vertScroll(int16_t top, int16_t scrollines, int16_t offset);	// useless
 	void dimScreen(); // prh addition = set all pixels to half their value
 
-	void Write_Cmd(uint16_t cmd);
-	void Write_Data(uint16_t data);
-	void Write_Cmd_Data(uint16_t cmd, uint16_t data);
 	void Push_Command(uint16_t cmd, uint8_t *block, int8_t N);
-	void Push_Any_Color(uint8_t * block, int16_t n, bool first, uint8_t flags);
+	void pushAnyColor(uint8_t * block, int16_t n, bool first, uint8_t flags);
 
-	uint16_t Read_ID(void);
-	uint16_t Read_Reg(uint16_t reg, int8_t index);
+	uint16_t readID(void);
+	uint16_t readReg(uint16_t reg, int8_t index);
 
 
 private:	// was protected
 
     uint16_t WIDTH;
 	uint16_t HEIGHT;
-	uint16_t width;
-	uint16_t height;
-	uint16_t rotation;
+	uint16_t _width;
+	uint16_t _height;
+	uint16_t _rotation;
 	uint16_t lcd_driver;
 	uint16_t lcd_model;
 
@@ -150,7 +133,7 @@ private:
 	uint16_t VL;
 	uint16_t R24BIT;
 
-	#ifdef __MK66FX1M0__
+	#ifdef __LCD_TEENSY__
 		// prh mod for teensy
 		uint8_t _reset;
 		uint8_t _cs;
@@ -197,7 +180,7 @@ private:
 
 		#endif
 
-	#endif	// !__MK66FX1M0__
+	#endif	// !__LCD_TEENSY__
 };
 
 // end of myLcdDevice.h

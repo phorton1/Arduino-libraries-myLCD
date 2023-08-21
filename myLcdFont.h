@@ -7,7 +7,7 @@
 	#include <avr/pgmspace.h>
 #elif defined(ESP8266)
 	#include <pgmspace.h>
-#else
+#elif !__LCD_TEENSY__
 	#define PROGMEM
 #endif
 

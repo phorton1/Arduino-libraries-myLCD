@@ -4,7 +4,6 @@
 // Additional myLcd methods
 
 #include "myLcd.h"
-#include "myLcdFont.c"
 #include <myDebug.h>
 
 #define dbg_la		0
@@ -15,7 +14,7 @@
 	// 1k buffer on the stack!!
 	// Note that var-arg formats can only be half of this ?!?
 
-#ifndef WITH_ILI9431_FONTS
+#ifndef __LCD_TEENSY__
 	// prh - already defined in Paul's stuff
 	#define swap(a, b) { int16_t t = a; a = b; b = t; }
 #endif
@@ -28,14 +27,14 @@
 void myLcd::drawBorder(int x, int y, int w, int h, int b, int color)
 	// draw a frigin border
 {
-	Fill_Rect(x,		y,		b,		h,	color);
-	Fill_Rect(x+w-b,	y,		b,		h,	color);
-	Fill_Rect(x,		y,		w,		b,	color);
-	Fill_Rect(x,		y+h-b,	w,		b,	color);
+	fillRect(x,		y,		b,		h,	color);
+	fillRect(x+w-b,	y,		b,		h,	color);
+	fillRect(x,		y,		w,		b,	color);
+	fillRect(x,		y+h-b,	w,		b,	color);
 }
 
 
-void myLcd::printf_justified(
+void myLcd::printfJustified(
 	int x,
 	int y,
 	int w,
@@ -49,11 +48,11 @@ void myLcd::printf_justified(
 {
 	va_list args;
 	va_start(args, format);
-	printfv_justified(x,y,w,h,just,fc,bc,use_bc,format,args);
+	printfvJustified(x,y,w,h,just,fc,bc,use_bc,format,args);
 }
 
 
-void myLcd::printfv_justified(
+void myLcd::printfvJustified(
 	int x,
 	int y,
 	int w,
@@ -72,12 +71,12 @@ void myLcd::printfv_justified(
 		return;
 	}
 	vsprintf(display_buffer,format,args);
-	print_justified(x,y,w,h,just,fc,bc,use_bc,display_buffer);
+	printJustified(x,y,w,h,just,fc,bc,use_bc,display_buffer);
 }
 
 
 
-void myLcd::print_justified(
+void myLcd::printJustified(
 	int x,
 	int start_y,
 	int w,
@@ -93,14 +92,14 @@ void myLcd::print_justified(
 	char cut_buf[MAX_PRINT_LEN+1];
 		// another 1K buffer on the stack, just so that we can
 		// we can break the passed in string into lines at \n's
-		// for calling Print_String ...
+		// for calling drawString ...
 
 
-	display(dbg_la,"print_justified(%d,%d,%d,%d,  %d, 0x%04x, 0x%04x, %d, \"%s\")", x, start_y, w, h, just, fc, bc, use_bc, text);
+	display(dbg_la,"printJustified(%d,%d,%d,%d,  %d, 0x%04x, 0x%04x, %d, \"%s\")", x, start_y, w, h, just, fc, bc, use_bc, text);
 
-	Set_Text_colour(fc);
+	setTextColor(fc);
 	if (use_bc)
-		Fill_Rect(x,start_y,w,h,bc);
+		fillRect(x,start_y,w,h,bc);
 
 	int y = start_y + 1;
 	int yoffset = getFontHeight();
@@ -143,7 +142,7 @@ void myLcd::print_justified(
 			use_x += xoffset;
 		}
 
-		Print_String((const uint8_t *) cut_buf,use_x,y);
+		drawString((const uint8_t *) cut_buf,use_x,y);
 		y += yoffset;
 
 	}	// outer while *text
@@ -156,7 +155,7 @@ void myLcd::print_justified(
 // ILI9431_FONTS protected API
 //------------------------------------------------------
 
-#if WITH_ILI9431_FONTS
+#if __LCD_TEENSY__
 
 	static uint32_t fetchbit(const uint8_t *p, uint32_t index)
 	{
@@ -200,19 +199,19 @@ void myLcd::print_justified(
 		uint32_t bitoffset;
 		const uint8_t *data;
 
-		display(dbg_la,"drawFontChar %d='%c' at x=%d y=%d", c, (c>32?c:32), text_x, text_y);
+		display(dbg_la,"drawFontChar %d='%c' at x=%d y=%d", c, (c>32?c:32), _text_x, _text_y);
 
-		if (c >= font->index1_first && c <= font->index1_last)
+		if (c >= _font->index1_first && c <= _font->index1_last)
 		{
-			bitoffset = c - font->index1_first;
-			bitoffset *= font->bits_index;
+			bitoffset = c - _font->index1_first;
+			bitoffset *= _font->bits_index;
 		}
-		else if (c >= font->index2_first && c <= font->index2_last)
+		else if (c >= _font->index2_first && c <= _font->index2_last)
 		{
-			bitoffset = c - font->index2_first + font->index1_last - font->index1_first + 1;
-			bitoffset *= font->bits_index;
+			bitoffset = c - _font->index2_first + _font->index1_last - _font->index1_first + 1;
+			bitoffset *= _font->bits_index;
 		}
-		else if (font->unicode)
+		else if (_font->unicode)
 		{
 			return; // TODO: implement sparse unicode
 		}
@@ -222,32 +221,32 @@ void myLcd::print_justified(
 		}
 
 		#if DEBUG_DRAW_FONT_CHAR
-			Serial.printf("  index =  %d\n", fetchbits_unsigned(font->index, bitoffset, font->bits_index));
+			Serial.printf("  index =  %d\n", fetchbits_unsigned(_font->index, bitoffset, _font->bits_index));
 		#endif
 
-		data = font->data + fetchbits_unsigned(font->index, bitoffset, font->bits_index);
+		data = _font->data + fetchbits_unsigned(_font->index, bitoffset, _font->bits_index);
 		uint32_t encoding = fetchbits_unsigned(data, 0, 3);
 		if (encoding != 0) return;
 
-		uint32_t width = fetchbits_unsigned(data, 3, font->bits_width);
-		bitoffset = font->bits_width + 3;
-		uint32_t height = fetchbits_unsigned(data, bitoffset, font->bits_height);
-		bitoffset += font->bits_height;
+		uint32_t _width = fetchbits_unsigned(data, 3, _font->bits_width);
+		bitoffset = _font->bits_width + 3;
+		uint32_t _height = fetchbits_unsigned(data, bitoffset, _font->bits_height);
+		bitoffset += _font->bits_height;
 
 		#if DEBUG_DRAW_FONT_CHAR
-			Serial.printf("  size =   %d,%d\n", width, height);
+			Serial.printf("  size =   %d,%d\n", _width, _height);
 		#endif
 
-		int32_t xoffset = fetchbits_signed(data, bitoffset, font->bits_xoffset);
-		bitoffset += font->bits_xoffset;
-		int32_t yoffset = fetchbits_signed(data, bitoffset, font->bits_yoffset);
-		bitoffset += font->bits_yoffset;
+		int32_t xoffset = fetchbits_signed(data, bitoffset, _font->bits_xoffset);
+		bitoffset += _font->bits_xoffset;
+		int32_t yoffset = fetchbits_signed(data, bitoffset, _font->bits_yoffset);
+		bitoffset += _font->bits_yoffset;
 		#if DEBUG_DRAW_FONT_CHAR
 			Serial.printf("  offset = %d,%d\n", xoffset, yoffset);
 		#endif
 
-		uint32_t delta = fetchbits_unsigned(data, bitoffset, font->bits_delta);
-		bitoffset += font->bits_delta;
+		uint32_t delta = fetchbits_unsigned(data, bitoffset, _font->bits_delta);
+		bitoffset += _font->bits_delta;
 
 		#if DEBUG_DRAW_FONT_CHAR
 			Serial.printf("  delta =  %d\n", delta);
@@ -256,36 +255,36 @@ void myLcd::print_justified(
 
 		// horizontally, we draw every pixel, or none at all
 
-		if (text_x < 0) text_x = 0;
-		int32_t origin_x = text_x + xoffset;
+		if (_text_x < 0) _text_x = 0;
+		int32_t origin_x = _text_x + xoffset;
 		if (origin_x < 0)
 		{
-			text_x -= xoffset;
+			_text_x -= xoffset;
 			origin_x = 0;
 		}
-		if (origin_x + (int)width > Get_Width())
+		if (origin_x + (int)_width > width())
 		{
 			// if (!wrap) return;  prh - wrap
 
 			origin_x = 0;
 			if (xoffset >= 0) {
-				text_x = 0;
+				_text_x = 0;
 			} else {
-				text_x = -xoffset;
+				_text_x = -xoffset;
 			}
-			text_y += font->line_space;
+			_text_y += _font->line_space;
 		}
-		if (text_y >= Get_Height()) return;
-		text_x += delta;
+		if (_text_y >= height()) return;
+		_text_x += delta;
 
 		// vertically, the top and/or bottom can be clipped
-		int32_t origin_y = text_y + font->cap_height - height - yoffset;
+		int32_t origin_y = _text_y + _font->cap_height - _height - yoffset;
 		#if DEBUG_DRAW_FONT_CHAR
 			Serial.printf("  origin = %d,%d\n", origin_x, origin_y);
 		#endif
 
 		// TODO: compute top skip and number of lines
-		int32_t linecount = height;
+		int32_t linecount = _height;
 		//uint32_t loopcount = 0;
 		uint32_t y = origin_y;
 		while (linecount)
@@ -304,13 +303,13 @@ void myLcd::print_justified(
 				uint32_t x = 0;
 				do
 				{
-					uint32_t xsize = width - x;
+					uint32_t xsize = _width - x;
 					if (xsize > 32) xsize = 32;
 					uint32_t bits = fetchbits_unsigned(data, bitoffset, xsize);
 					drawFontBits(bits, xsize, origin_x + x, y, 1);
 					bitoffset += xsize;
 					x += xsize;
-				} while (x < width);
+				} while (x < _width);
 				y++;
 				linecount--;
 			}
@@ -321,7 +320,7 @@ void myLcd::print_justified(
 				uint32_t x = 0;
 				do
 				{
-					uint32_t xsize = width - x;
+					uint32_t xsize = _width - x;
 					if (xsize > 32) xsize = 32;
 					#if DEBUG_DRAW_FONT_CHAR
 						Serial.printf("    multi line %d\n", n);
@@ -330,7 +329,7 @@ void myLcd::print_justified(
 					drawFontBits(bits, xsize, origin_x + x, y, n);
 					bitoffset += xsize;
 					x += xsize;
-				} while (x < width);
+				} while (x < _width);
 				y += n;
 				linecount -= n;
 			}
@@ -354,7 +353,7 @@ void myLcd::print_justified(
 			{
 				if (bits & (1 << n))
 				{
-					Draw_Pixel(x1, y, text_color);
+					drawPixel(x1, y, _text_color);
 					#if DEBUG_DRAW_FONT_CHAR > 1
 						Serial.printf("        pixel at %d,%d\n", x1, y);
 					#endif
@@ -365,7 +364,7 @@ void myLcd::print_justified(
 		}
 	}
 
-#endif	// WITH_ILI9431_FONTS
+#endif	// __LCD_TEENSY__
 
 
 
@@ -376,30 +375,30 @@ void myLcd::print_justified(
 
 int myLcd::getFontHeight()
 {
-	#if WITH_ILI9431_FONTS
-		if (font)
-			return font->line_space;
+	#if __LCD_TEENSY__
+		if (_font)
+			return _font->line_space;
 	#endif
 
-	return text_size * 8;
+	return _text_size * 8;
 }
 
 
 int myLcd::getCharWidth(unsigned int c)
 {
-	#if WITH_ILI9431_FONTS
-		if (font)
+	#if __LCD_TEENSY__
+		if (_font)
 		{
 			uint32_t bitoffset;
-			if (c >= font->index1_first && c <= font->index1_last)
+			if (c >= _font->index1_first && c <= _font->index1_last)
 			{
-				bitoffset = c - font->index1_first;
-				bitoffset *= font->bits_index;
+				bitoffset = c - _font->index1_first;
+				bitoffset *= _font->bits_index;
 			}
-			else if (c >= font->index2_first && c <= font->index2_last)
+			else if (c >= _font->index2_first && c <= _font->index2_last)
 			{
-				bitoffset = c - font->index2_first + font->index1_last - font->index1_first + 1;
-				bitoffset *= font->bits_index;
+				bitoffset = c - _font->index2_first + _font->index1_last - _font->index1_first + 1;
+				bitoffset *= _font->bits_index;
 			}
 			else
 			{
@@ -407,7 +406,7 @@ int myLcd::getCharWidth(unsigned int c)
 				return 0;
 			}
 
-			const uint8_t *data = font->data + fetchbits_unsigned(font->index, bitoffset, font->bits_index);
+			const uint8_t *data = _font->data + fetchbits_unsigned(_font->index, bitoffset, _font->bits_index);
 			uint32_t encoding = fetchbits_unsigned(data, 0, 3);
 			if (encoding != 0)
 			{
@@ -415,17 +414,17 @@ int myLcd::getCharWidth(unsigned int c)
 				return 0;
 			}
 
-			bitoffset = font->bits_width + 3;
-			bitoffset += font->bits_height;
-			bitoffset += font->bits_xoffset;
-			bitoffset += font->bits_yoffset;
+			bitoffset = _font->bits_width + 3;
+			bitoffset += _font->bits_height;
+			bitoffset += _font->bits_xoffset;
+			bitoffset += _font->bits_yoffset;
 
-			uint32_t delta = fetchbits_unsigned(data, bitoffset, font->bits_delta);
+			uint32_t delta = fetchbits_unsigned(data, bitoffset, _font->bits_delta);
 			return (int) delta;
 		}
 	#endif
 
-	return text_size * 6;
+	return _text_size * 6;
 }
 
 
@@ -433,8 +432,8 @@ int myLcd::getTextExtent(const char *text)
 {
 	int len = strlen(text);
 
-	#if WITH_ILI9431_FONTS
-		if (font)
+	#if __LCD_TEENSY__
+		if (_font)
 		{
 			int strlen = 0;
 			for (int i=0; i<len; i++)
@@ -443,5 +442,5 @@ int myLcd::getTextExtent(const char *text)
 		}
 	#endif
 
-	return len * text_size * 6;
+	return len * _text_size * 6;
 }

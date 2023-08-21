@@ -9,13 +9,12 @@
 
 #define CONFIG_USE_8BIT_BUS 1
 
-#ifdef __MK66FX1M0__		// prh - teensy mods
-	#include <Arduino.h>
-#endif
-
-#include <myDebug.h>
 
 #define dbg_ld  0
+
+#include "myLcdDevice.h"
+#include "myLcdDeviceRegs.h"
+#include <myDebug.h>
 
 
 #if defined(__SAM3X8E__)
@@ -25,10 +24,13 @@
     #define pgm_read_word(addr) (*(const unsigned short *)(addr))
 #endif
 
+
 #include "pins_arduino.h"
-#include "wiring_private.h"
-#include "myLcdDevice.h"
-#include "myLcdDeviceRegs.h"
+
+#if !__LCD_TEENSY__
+	#include "wiring_private.h"
+#endif
+
 
 
 #if (CONFIG_USE_8BIT_BUS==1)
@@ -73,7 +75,7 @@ lcd_info current_lcd_info[] = {
 
 myLcdDevice::myLcdDevice(uint16_t model,uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd, uint8_t reset)
 {
-	#ifdef __MK66FX1M0__	// prh teensy mods
+	#ifdef __LCD_TEENSY__
 
 		_reset = reset;			// 8
 		_cs = cs;				// 9
@@ -93,7 +95,7 @@ myLcdDevice::myLcdDevice(uint16_t model,uint8_t cs, uint8_t cd, uint8_t wr, uint
 		digitalWrite(rd, 	LOW);
 		digitalWrite(reset, HIGH);
 
-	#else	// !__MK66FX1M0__ prh
+	#else	// !__LCD_TEENSY__ prh
 
 		#ifndef USE_ADAFRUIT_SHIELD_PIN
 			// Convert pin numbers to registers and bitmasks
@@ -152,25 +154,25 @@ myLcdDevice::myLcdDevice(uint16_t model,uint8_t cs, uint8_t cd, uint8_t wr, uint
 			pinMode(5, OUTPUT);
 		#endif
 
-		// added to Init_LCD() in my version:
+		// added to begin() in my version:
 
 		setWriteDir();
 
-	#endif	// !__MK66FX1M0__  prh
+	#endif	// !__LCD_TEENSY__  prh
 
- 	rotation = 0;
+ 	_rotation = 0;
  	lcd_model = current_lcd_info[model].lcd_id;
 
 	WIDTH = current_lcd_info[model].lcd_wid;
 	HEIGHT = current_lcd_info[model].lcd_heg;
 
-	width = WIDTH;
-	height = HEIGHT;
+	_width = WIDTH;
+	_height = HEIGHT;
 }
 
 
 
-#ifndef __MK66FX1M0__	// prh teensy mods
+#ifndef __LCD_TEENSY__	// prh teensy mods
 
 	myLcdDevice::myLcdDevice(int16_t wid,int16_t heg,uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd, uint8_t reset)
 	{
@@ -230,33 +232,34 @@ myLcdDevice::myLcdDevice(uint16_t model,uint8_t cs, uint8_t cd, uint8_t wr, uint
 			pinMode(A0, OUTPUT);
 			pinMode(5, OUTPUT);
 		#endif
-		rotation = 0;
+		_rotation = 0;
 		lcd_model = 0xFFFF;
 		setWriteDir();
 		WIDTH = wid;
 		HEIGHT = heg;
-		width = WIDTH;
-		height = HEIGHT;
+		_width = WIDTH;
+		_height = HEIGHT;
 	}
 
-#endif	// !__MK66FX1M0__  prh teensy mods
+#endif	// !__LCD_TEENSY__  prh teensy mods
 
 
 //-----------------------------
 // init && reset
 //-----------------------------
 
-void myLcdDevice::Init_LCD(void)
+void myLcdDevice::begin(void)
 {
 	setWriteDir();	// prh added in my version, should be benign
 	reset();
 	if (lcd_model == 0xFFFF)
 	{
-		lcd_model = Read_ID();
+		lcd_model = readID();
 	}
-	uint16_t ID = Read_ID();
+	// prh - for debuggin
+	readID();
 	start(lcd_model);
-//	Set_Rotation(0);
+//	setRotation(0);
 }
 
 
@@ -713,27 +716,27 @@ void myLcdDevice::start(uint16_t ID)
 			lcd_driver = ID_UNKNOWN;
 			break;
 	}
-	Set_Rotation(rotation);
-	Invert_Display(false);
+	setRotation(_rotation);
+	invertDisplay(false);
 }
 
 
 
 //-----------------------------------------------
-// Public API - Set_Rotation
+// Public API - setRotation
 //-----------------------------------------------
 
-void myLcdDevice::Set_Rotation(uint8_t r)
+void myLcdDevice::setRotation(uint8_t r)
 {
-    rotation = r & 3;           // just perform the operation ourselves on the protected variables
-    width = (rotation & 1) ? HEIGHT : WIDTH;
-    height = (rotation & 1) ? WIDTH : HEIGHT;
+    _rotation = r & 3;           // just perform the operation ourselves on the protected variables
+    _width = (_rotation & 1) ? HEIGHT : WIDTH;
+    _height = (_rotation & 1) ? WIDTH : HEIGHT;
 	CS_ACTIVE;
 	// prh - removed compiler warnings by settint val to zero in all cases below
 	if (lcd_driver == ID_932X)
 	{
 		uint16_t val = 0;
-		switch(rotation)
+		switch(_rotation)
 		{
 			default:
 				val = 0x1030;  //0 degree
@@ -753,7 +756,7 @@ void myLcdDevice::Set_Rotation(uint8_t r)
 	else if (lcd_driver == ID_7735)
 	{
 		uint8_t val = 0;
-		switch(rotation)
+		switch(_rotation)
 		{
 			case 0:
 				val = 0xD0; //0 degree
@@ -773,7 +776,7 @@ void myLcdDevice::Set_Rotation(uint8_t r)
 	else if (lcd_driver == ID_9481)
 	{
 		uint8_t val = 0;
-		switch (rotation)
+		switch (_rotation)
 		{
 		   	case 0:
 		     	val = 0x09; //0 degree PAO=0,CAO=0,P/CO=0,VO=0,RGBO=1,DO=0,HF=0,VF=1
@@ -794,7 +797,7 @@ void myLcdDevice::Set_Rotation(uint8_t r)
 	else if (lcd_driver == ID_9486)
 	{
 		uint8_t val = 0;
-		switch (rotation)
+		switch (_rotation)
 		{
 		   	case 0:
 		     	val = ILI9341_MADCTL_MX | ILI9341_MADCTL_BGR; //0 degree
@@ -814,7 +817,7 @@ void myLcdDevice::Set_Rotation(uint8_t r)
 	else if (lcd_driver == ID_9488)
 	{
 		uint8_t val = 0;
-		switch (rotation)
+		switch (_rotation)
 		{
 			case 0:
 		     	val = ILI9341_MADCTL_MX | ILI9341_MADCTL_MY | ILI9341_MADCTL_BGR ; //0 degree
@@ -834,7 +837,7 @@ void myLcdDevice::Set_Rotation(uint8_t r)
 	else
 	{
 		uint8_t val = 0;
-		switch (rotation)
+		switch (_rotation)
 		{
 		   	case 0:
 		     	val = ILI9341_MADCTL_MX | ILI9341_MADCTL_BGR; //0 degree
@@ -851,8 +854,8 @@ void myLcdDevice::Set_Rotation(uint8_t r)
 		 }
 		 writeCmdData8(MD, val);
 	}
- 	Set_Addr_Window(0, 0, width - 1, height - 1);
-	Vert_Scroll(0, HEIGHT, 0);
+ 	setAddrWindow(0, 0, _width - 1, _height - 1);
+	vertScroll(0, HEIGHT, 0);
 	CS_IDLE;
 }
 
@@ -863,7 +866,7 @@ void myLcdDevice::Set_Rotation(uint8_t r)
 //---------------------------------------------------------
 
 // virtual public
-void myLcdDevice::Fill_Rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+void myLcdDevice::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
 	int16_t end;
 	if (w < 0)
@@ -874,8 +877,8 @@ void myLcdDevice::Fill_Rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t
     end = x + w;
     if (x < 0)
         x = 0;
-    if (end > width)
-        end = width;
+    if (end > _width)
+        end = _width;
     w = end - x;
     if (h < 0)
 	{
@@ -885,11 +888,11 @@ void myLcdDevice::Fill_Rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t
     end = y + h;
     if (y < 0)
         y = 0;
-    if (end > height)
-        end = height;
+    if (end > _height)
+        end = _height;
     h = end - y;
 
-    Set_Addr_Window(x, y, x + w - 1, y + h - 1);//set area
+    setAddrWindow(x, y, x + w - 1, y + h - 1);//set area
 	CS_ACTIVE;
     if (lcd_driver == ID_932X)
 		writeCmd8(ILI932X_START_OSC);
@@ -909,18 +912,18 @@ void myLcdDevice::Fill_Rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t
         } while (--end != 0);
 	}
 	if (lcd_driver == ID_932X)
-		Set_Addr_Window(0, 0, width - 1, height - 1);
+		setAddrWindow(0, 0, _width - 1, _height - 1);
 	else if (lcd_driver == ID_7575)
-		Set_LR();
+		setLR();
 
 	CS_IDLE;
 
-}	// Fill_Rect()
+}	// fillRect()
 
 
 
 // virtual
-uint16_t myLcdDevice::Color_To_565(uint8_t r, uint8_t g, uint8_t b)
+uint16_t myLcdDevice::color565(uint8_t r, uint8_t g, uint8_t b)
 	// convert 8-bit R,G,B to 16-bit packed color
 {
 	return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3);
@@ -928,11 +931,11 @@ uint16_t myLcdDevice::Color_To_565(uint8_t r, uint8_t g, uint8_t b)
 
 
 // virtual
-void myLcdDevice::Draw_Pixel(int16_t x, int16_t y, uint16_t color)
+void myLcdDevice::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
-	if ((x < 0) || (y < 0) || (x > width) || (y > height))
+	if ((x < 0) || (y < 0) || (x > _width) || (y > _height))
 		return;
-	Set_Addr_Window(x, y, x, y);
+	setAddrWindow(x, y, x, y);
 	CS_ACTIVE;
 	writeCmdData16(CC, color);
 	CS_IDLE;
@@ -940,7 +943,7 @@ void myLcdDevice::Draw_Pixel(int16_t x, int16_t y, uint16_t color)
 
 
 // virtual
-void myLcdDevice::Set_Addr_Window(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+void myLcdDevice::setAddrWindow(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 {
 	CS_ACTIVE;
 	if (lcd_driver == ID_932X)
@@ -949,11 +952,11 @@ void myLcdDevice::Set_Addr_Window(int16_t x1, int16_t y1, int16_t x2, int16_t y2
 	    // system.  932X requires hardware-native coords regardless of
 	    // MADCTL, so rotate inputs as needed.  The address counter is
 	    // set to the top-left corner -- although fill operations can be
-	    // done in any direction, the current screen rotation is applied
+	    // done in any direction, the current screen _rotation is applied
 	    // because some users find it disconcerting when a fill does not
 	    // occur top-to-bottom.
 	    int x, y, t;
-	    switch(rotation)
+	    switch(_rotation)
 		{
 			default:
 				x  = x1;
@@ -1029,12 +1032,12 @@ void myLcdDevice::Set_Addr_Window(int16_t x1, int16_t y1, int16_t x2, int16_t y2
 		Push_Command(YC, y_buf, 4); //set y address
 	}
 	CS_IDLE;
-}	// Set_Addr_Window()
+}	// setAddrWindow()
 
 
 
 // virtual
-void myLcdDevice::Push_Any_Color(uint16_t * block, int16_t n, bool first, uint8_t flags)
+void myLcdDevice::pushAnyColor(uint16_t * block, int16_t n, bool first, uint8_t flags)
 	// push block of 16 bit colors
 {
 	uint16_t color;
@@ -1063,11 +1066,11 @@ void myLcdDevice::Push_Any_Color(uint16_t * block, int16_t n, bool first, uint8_
         writeData16(color);
     }
     CS_IDLE;
-}	// Push_Any_Color()
+}	// pushAnyColor()
 
 
 // virtual
-int16_t myLcdDevice::Read_GRAM(int16_t x, int16_t y, uint16_t *block, int16_t w, int16_t h)
+int16_t myLcdDevice::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *block)
 {
 	// prh - teensy mods remove unused var warnings
 	// uint16_t ret, dummy;
@@ -1078,7 +1081,7 @@ int16_t myLcdDevice::Read_GRAM(int16_t x, int16_t y, uint16_t *block, int16_t w,
     uint32_t n = w * h;		// prh
     uint8_t r, g, b;
 
-    Set_Addr_Window(x, y, x + w - 1, y + h - 1);
+    setAddrWindow(x, y, x + w - 1, y + h - 1);
 
 	while (n > 0)
 	{
@@ -1099,7 +1102,7 @@ int16_t myLcdDevice::Read_GRAM(int16_t x, int16_t y, uint16_t *block, int16_t w,
 				*block++ = (r<<8 | g);
 				n--;
 			}
-			Set_Addr_Window(0, 0, width - 1, height - 1);
+			setAddrWindow(0, 0, _width - 1, _height - 1);
 		}
 		else
 		{
@@ -1111,7 +1114,7 @@ int16_t myLcdDevice::Read_GRAM(int16_t x, int16_t y, uint16_t *block, int16_t w,
         			read8(r);
          			read8(g);
         			read8(b);
-            		ret = Color_To_565(r, g, b);
+            		ret = color565(r, g, b);
 				}
 				else if (R24BIT == 0)	// prh could if (R24BIT) and else
 				{
@@ -1133,7 +1136,7 @@ int16_t myLcdDevice::Read_GRAM(int16_t x, int16_t y, uint16_t *block, int16_t w,
 // Other Internal Methods
 //-------------------------------------------
 
-void myLcdDevice::Set_LR(void)
+void myLcdDevice::setLR(void)
 	// Unlike the 932X drivers that set the address window to the full screen
 	// by default (using the address counter for drawPixel operations), the
 	// 7575 needs the address window set on all graphics operations.  In order
@@ -1142,15 +1145,15 @@ void myLcdDevice::Set_LR(void)
 	// that drawPixel only needs to change the upper left each time.
 {
 	CS_ACTIVE;
-	writeCmdData8(HX8347G_COLADDREND_HI,(width -1)>>8);
-	writeCmdData8(HX8347G_COLADDREND_LO,width -1);
-	writeCmdData8(HX8347G_ROWADDREND_HI,(height -1)>>8);
-	writeCmdData8(HX8347G_ROWADDREND_LO,height -1);
+	writeCmdData8(HX8347G_COLADDREND_HI,(_width -1)>>8);
+	writeCmdData8(HX8347G_COLADDREND_LO,_width -1);
+	writeCmdData8(HX8347G_ROWADDREND_HI,(_height -1)>>8);
+	writeCmdData8(HX8347G_ROWADDREND_LO,_height -1);
 	CS_IDLE;
 }
 
 
-void myLcdDevice::Invert_Display(boolean i)
+void myLcdDevice::invertDisplay(boolean i)
 {
 	CS_ACTIVE;
 	uint8_t val = VL^i;
@@ -1170,7 +1173,7 @@ void myLcdDevice::Invert_Display(boolean i)
 }
 
 
-void myLcdDevice::Vert_Scroll(int16_t top, int16_t scrollines, int16_t offset)
+void myLcdDevice::vertScroll(int16_t top, int16_t scrollines, int16_t offset)
 {
     int16_t bfa = HEIGHT - top - scrollines;
     int16_t vsp;
@@ -1213,7 +1216,7 @@ void myLcdDevice::Vert_Scroll(int16_t top, int16_t scrollines, int16_t offset)
 			Push_Command(0x13, NULL, 0);
 		}
 	}
-}	// Vert_Scroll()
+}	// vertScroll()
 
 
 
@@ -1240,9 +1243,9 @@ void myLcdDevice::dimScreen()		// set all pixels to half their value
 
 	for (int y=0; y<320; y += NUM_BUF_LINES)
 	{
-		Read_GRAM(0,y,line_buf,480,NUM_BUF_LINES);
+		readRect(0,y,480,NUM_BUF_LINES,line_buf);
 
-		Set_Addr_Window(0, y, 479, y+NUM_BUF_LINES-1);
+		setAddrWindow(0, y, 479, y+NUM_BUF_LINES-1);
 		CS_ACTIVE;
 		writeCmd8(CC);
 
@@ -1259,8 +1262,8 @@ void myLcdDevice::dimScreen()		// set all pixels to half their value
 			int b = (color << 4) * 0xF8;
 
 			uint16_t new_color = toggle ?
-				Color_To_565(r*4,g*4,b*4) :
-				Color_To_565(r/4,g/4,b/4);
+				color565(r*4,g*4,b*4) :
+				color565(r/4,g/4,b/4);
 
 			writeData16(new_color);
 		}
@@ -1276,20 +1279,6 @@ void myLcdDevice::dimScreen()		// set all pixels to half their value
 // Primitives
 //-------------------------------------------------
 
-void myLcdDevice::Write_Cmd(uint16_t cmd)
-{
-	writeCmd16(cmd);
-}
-
-void myLcdDevice::Write_Data(uint16_t data)
-{
-	writeData16(data);
-}
-
-void myLcdDevice::Write_Cmd_Data(uint16_t cmd, uint16_t data)
-{
-	writeCmdData16(cmd,data);
-}
 
 void myLcdDevice::Push_Command(uint16_t cmd, uint8_t *block, int8_t N)
 	// Write a command and N datas
@@ -1310,7 +1299,7 @@ void myLcdDevice::Push_Command(uint16_t cmd, uint8_t *block, int8_t N)
 }
 
 
-void myLcdDevice::Push_Any_Color(uint8_t * block, int16_t n, bool first, uint8_t flags)
+void myLcdDevice::pushAnyColor(uint8_t * block, int16_t n, bool first, uint8_t flags)
 	// push block of 8 bit colors
 {
 	uint16_t color;
@@ -1349,42 +1338,42 @@ void myLcdDevice::Push_Any_Color(uint8_t * block, int16_t n, bool first, uint8_t
 // ReadXXX methods
 //--------------------------------------
 
-uint16_t myLcdDevice::Read_ID(void)
+uint16_t myLcdDevice::readID(void)
 {
 	uint32_t ret = 0;
 
-	if ((Read_Reg(0x04,0) == 0x00) && (Read_Reg(0x04,1) == 0x8000))
+	if ((readReg(0x04,0) == 0x00) && (readReg(0x04,1) == 0x8000))
 	{
-		display(dbg_ld,"Read_ID() got 0x00 0x8000",0);
+		display(dbg_ld,"readID() got 0x00 0x8000",0);
 
 		uint8_t buf[] = {0xFF, 0x83, 0x57};
 		Push_Command(HX8357D_SETC, buf, sizeof(buf));
 
-		ret = Read_Reg(0xD0,0);
+		ret = readReg(0xD0,0);
 		ret <<= 16;				// this shift cannot be correct
-		ret = Read_Reg(0xD0,1);
+		ret = readReg(0xD0,1);
 		if ((ret == 0x990000) || (ret == 0x900000))
 		{
-			display(dbg_ld,"Read_ID() got 0x9090",0);
+			display(dbg_ld,"readID() got 0x9090",0);
 			ret = 0x9090;
 		}
 	}
 	if (ret != 0x9090)
-		ret = Read_Reg(0xD3,1); //0x9341 0x9486
+		ret = readReg(0xD3,1); //0x9341 0x9486
 
 	if (ret != 0x9341 &&
 		ret != 0x9486 &&
 		ret != 0x9488)
-		ret = Read_Reg(0, 0); //others
+		ret = readReg(0, 0); //others
 
-	display(dbg_ld,"Read_ID()=0x%08x",ret);
+	display(dbg_ld,"readID()=0x%08x",ret);
 
 	// return low 32 bits
 	return ret;
 }
 
 
-uint16_t myLcdDevice::Read_Reg(uint16_t reg, int8_t index)
+uint16_t myLcdDevice::readReg(uint16_t reg, int8_t index)
 {
 	// prh - teensy mods remove unused var warnings
 	// uint16_t ret,high;

@@ -9,15 +9,14 @@
 // #define USE_8BIT_SHIELD_ON_MEGA
 
 
-#ifdef __MK66FX1M0__	// teensy specific
+#ifdef __LCD_TEENSY__	// teensy specific
 
 	// implementations of following methods in myLcdDeviceTeensy.cpp
 
-    extern void  setReadDir();
-    extern void  setWriteDir();
-    extern void  write8(uint8_t v);
+    extern void  	setReadDir();
+    extern void  	setWriteDir();
     extern uint8_t  _read8();
-    extern void _write8(uint8_t v);
+    extern void 	_write8(uint8_t v);
 
 	#define PRH_DELAY_MIN delayMicroseconds(2)
 		// prh 2023-08-17 - I was getting blanks in lines in teensyExpression
@@ -383,7 +382,7 @@
 
 		#endif	// !Breakout board
 	#endif	// !defined(__SAM3X8E__)
-#endif  // ! prh __MK66FX1M0__
+#endif  // ! prh __LCD_TEENSY__
 
 
 // Data write strobe, ~2 instructions and always inline
@@ -412,13 +411,6 @@
 	uint8_t hi, lo; \
 	hi = (a) >> 8; lo = (a); CD_COMMAND; write8(hi); write8(lo); \
 	hi = (d) >> 8; lo = (d); CD_DATA   ; write8(hi); write8(lo); }
-
-// prh - removed \'s from following multiline comment
-// Set value of 2 TFT registers: Two 8-bit addresses (hi & lo), 16-bit value
-// #define writeRegisterPairInline(aH, aL, d) {
-//  	uint8_t hi = (d) >> 8, lo = (d);
-//  	CD_COMMAND; write8(aH); CD_DATA; write8(hi);
-//  	CD_COMMAND; write8(aL); CD_DATA; write8(lo); }
 
 
 // end of myLcdDevice8.h

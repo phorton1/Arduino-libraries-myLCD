@@ -4,11 +4,12 @@
 // Contains teensy specfic methods as extern'd
 // in myLcdDevice8.h
 
-#ifdef __MK66FX1M0__
+#include "myLcd.h"
+
+#ifdef __LCD_TEENSY__
     // only compiles on Teensy
 
-#include "Arduino.h"
-#include "myDebug.h"
+#include <myDebug.h>
 
 // This file should be move to the LCDWIKI_KBV library
 
@@ -300,6 +301,6 @@ uint8_t _read8()
 
 #endif // USE_8BIT_OPERATIONS
 
-#endif // __MK66FX1M0__
+#endif // __LCD_TEENSY__
 
 // end myLcdDeviceTeensy.cpp

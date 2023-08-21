@@ -234,11 +234,5 @@
   CD_COMMAND; write16(a); \
   CD_DATA   ; write16(d);  }
 
-// Set value of 2 TFT registers: Two 8-bit addresses (hi & lo), 16-bit value
-// #define writeRegisterPairInline(aH, aL, d) { \
-//  	uint8_t hi = (d) >> 8, lo = (d); \
-//  	CD_COMMAND; write8(aH); CD_DATA; write8(hi); \
-//  	CD_COMMAND; write8(aL); CD_DATA; write8(lo); }
-
 
 // end of myLcdDevice16.h
