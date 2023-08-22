@@ -6,7 +6,7 @@
 #include "myLcd.h"
 #include <myDebug.h>
 
-#define dbg_la		0
+#define dbg_la		1
 
 #define DEBUG_DRAW_FONT_CHAR   0
 
@@ -199,7 +199,7 @@ void myLcd::printJustified(
 		uint32_t bitoffset;
 		const uint8_t *data;
 
-		display(dbg_la,"drawFontChar %d='%c' at x=%d y=%d", c, (c>32?c:32), _text_x, _text_y);
+		display(dbg_la+1,"drawFontChar %d='%c' at x=%d y=%d", c, (c>32?c:32), _text_x, _text_y);
 
 		if (c >= _font->index1_first && c <= _font->index1_last)
 		{
