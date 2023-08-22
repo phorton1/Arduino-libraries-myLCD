@@ -18,14 +18,16 @@
     extern uint8_t  _read8();
     extern void 	_write8(uint8_t v);
 
-	#define PRH_DELAY_MIN delayMicroseconds(2)
-		// prh 2023-08-17 - I was getting blanks in lines in teensyExpression
+	#define DELAY_MIN // delayMicroseconds(2)
+		// 2023-08-17 - I was getting blanks in lines in teensyExpression
 		// and determined empirically that I needed a delay between WR_ACTIVE
 		// and WR_IDLE, so took out the call to the WR_STROBE macro, put the
 		// WR_ACTIVE and WR_IDLE directly into the write() macro and messed
 		// with delay. 2 microseconds seems to be the minimum that worked.
+		//
+		// 2023-08-21 - I now think it's that the timer_handler() is the problem.
 
-    #define write8(v)   { _write8(v); WR_ACTIVE; PRH_DELAY_MIN; WR_IDLE; }	// WR_STROBE; }
+    #define write8(v)   { _write8(v); WR_ACTIVE; DELAY_MIN; WR_IDLE; }	// WR_STROBE; }
     #define read8(v)    { RD_ACTIVE; DELAYN; *(&v) = _read8(); RD_IDLE; }
 
     #define DELAYN     // delayMicroseconds(7);	// was DELAY7
