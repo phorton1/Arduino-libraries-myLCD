@@ -104,7 +104,12 @@ void myLcd::printJustified(
 	int y = start_y + 1;
 	int yoffset = getFontHeight();
 
-	while (*text) // && y+yoffset-1<start_y+h-1)
+	// We clip the string in the X direction by pushing characters to the next line.
+	// Until such a time as we implement actual clipping in drawChar/Strings,
+	// we currently print any characters whose TOPS are IN the rectangle, without regard
+	// if they overflow the rectangle at the bottom.
+
+	while (*text && y < start_y + h - 1) // while the top of the next line is in the rectangle
 	{
 		int len = 0;
 		int pixel_len = 0;
