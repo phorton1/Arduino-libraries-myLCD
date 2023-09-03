@@ -116,20 +116,25 @@ void myLcd::printJustified(
 
 		while (*text)
 		{
-			char c = *text++;
+			char c = *text;
 			int pix = getCharWidth(c);
 
 			// if cr, or the whole character won't fit,
 			// or the unlikely case they tried to print more than 1025 characters,
 			// push the next character to the next line
 
-			if (c == 13 ||
-				pixel_len + pix > w ||
-				len >= MAX_PRINT_LEN)
+			if (c == '\n')
+			{
+				text++;
+				break;
+			}
+			else if (pixel_len + pix > w ||
+					len >= MAX_PRINT_LEN)
 			{
 				break;
 			}
 
+			text++;
 			pixel_len += pix;
 			cut_buf[len++] = c;
 
@@ -147,7 +152,7 @@ void myLcd::printJustified(
 			use_x += xoffset;
 		}
 
-		drawString((const uint8_t *) cut_buf,use_x,y);
+		drawString(cut_buf,use_x,y);
 		y += yoffset;
 
 	}	// outer while *text

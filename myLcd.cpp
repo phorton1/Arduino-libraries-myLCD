@@ -157,6 +157,100 @@ void myLcd::drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 
 
 
+//draw a triangle
+void myLcd::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,int16_t x2, int16_t y2)
+{
+	drawLine(x0, y0, x1, y1);
+	drawLine(x1, y1, x2, y2);
+	drawLine(x2, y2, x0, y0);
+}
+
+//fill a triangle
+void myLcd::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,int16_t x2, int16_t y2)
+{
+	int16_t a, b, y, last;
+	if (y0 > y1)
+	{
+		swap(y0, y1);
+		swap(x0, x1);
+	}
+	if (y1 > y2)
+	{
+		swap(y2, y1);
+		swap(x2, x1);
+	}
+	if (y0 > y1)
+	{
+		swap(y0, y1);
+		swap(x0, x1);
+	}
+
+	if (y0 == y2)
+	{
+		a = b = x0;
+		if (x1 < a)
+		{
+			a = x1;
+		}
+		else if (x1 > b)
+		{
+			b = x1;
+		}
+		if (x2 < a)
+		{
+			a = x2;
+		}
+		else if (x2 > b)
+		{
+			b = x2;
+		}
+		drawFastHLine(a, y0, b-a+1);
+		return;
+	}
+
+	int16_t dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0, dx12 = x2 - x1, dy12 = y2 - y1;
+	int32_t sa = 0, sb = 0;
+	if (y1 == y2)
+	{
+		last = y1;
+	}
+	else
+	{
+		last = y1-1;
+	}
+
+	for (y=y0; y<=last; y++)
+	{
+		a   = x0 + sa / dy01;
+		b   = x0 + sb / dy02;
+		sa += dx01;
+		sb += dx02;
+		if (a > b)
+		{
+			swap(a,b);
+		}
+		drawFastHLine(a, y, b-a+1);
+	}
+
+	sa = dx12 * (y - y1);
+	sb = dx02 * (y - y0);
+	for (; y<=y2; y++)
+	{
+		a   = x1 + sa / dy12;
+		b   = x0 + sb / dy02;
+		sa += dx12;
+		sb += dx02;
+		if (a > b)
+		{
+			swap(a,b);
+		}
+		drawFastHLine(a, y, b-a+1);
+	}
+}
+
+
+
+
 // prh - talk about a weird amateur API
 // as well as polluting namespace ..
 // these constants are no longer effing public
@@ -166,15 +260,15 @@ void myLcd::drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 
 
 //print string
-size_t myLcd::drawString(const uint8_t *st, int16_t x, int16_t y)
+size_t myLcd::drawString(const char *st, int16_t x, int16_t y)
 {
 	int16_t pos;
 	uint16_t len;
-	const char * p = (const char *)st;
+	const char *p = st;
 	size_t n = 0;
 	if (x == CENTER || x == RIGHT)
 	{
-		len = strlen((const char *)st) * 6 * _text_size;
+		len = strlen(st) * 6 * _text_size;
 		pos = (width() - len);
 		if (x == CENTER)
 		{
@@ -186,14 +280,14 @@ size_t myLcd::drawString(const uint8_t *st, int16_t x, int16_t y)
 		}
 	}
     setCursor(x, y);
-	while(1)
+	while (1)
 	{
-		unsigned char ch = *(p++);//pgm_read_byte(p++);
-		if(ch == 0)
+		char ch = *(p++);
+		if (ch == 0)
 		{
 			break;
 		}
-		if(write(ch))
+		if (write(ch))
 		{
 			n++;
 		}
@@ -216,6 +310,10 @@ void myLcd::drawFastVLine(int16_t x, int16_t y, int16_t h)
 	fillRect(x, y, 1, h, _draw_color);
 }
 
+void myLcd::drawFastHLine(int16_t x, int16_t y, int16_t w)
+{
+	fillRect(x, y, w, 1, _draw_color);
+}
 
 void myLcd::fillCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t cornername,int16_t delta)
 	// fill a semi-circle
@@ -271,11 +369,11 @@ void myLcd::drawChar(
 	uint8_t size,
 	boolean use_bc)	// prh changed from "mode"
 {
-	if((x >= width()) || (y >= height()) || ((x + 6 * size - 1) < 0) || ((y + 8 * size - 1) < 0))
+	if ((x >= width()) || (y >= height()) || ((x + 6 * size - 1) < 0) || ((y + 8 * size - 1) < 0))
 	{
     	return;
 	}
-  	if(c >= 176) // prh huh?
+	if (c >= 176) // prh huh?
   	{
 		c++;
   	}
@@ -348,7 +446,7 @@ size_t myLcd::write(uint8_t c)
 				_text_y += _font->line_space;
 				_text_x = 0;
 			}
-			else if(c == '\r')
+			else if (c == '\r')
 			{
 			}
 			else
@@ -364,7 +462,7 @@ size_t myLcd::write(uint8_t c)
     	_text_y += _text_size*8;
     	_text_x  = 0;
  	}
-	else if(c == '\r')
+	else if (c == '\r')
 	{
 	}
 	else

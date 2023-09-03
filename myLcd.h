@@ -73,8 +73,10 @@ public:
 	void 	 fillCircle(int16_t x, int16_t y, int16_t radius);
 	void 	 drawCircle(int16_t x, int16_t y, int16_t radius);
 	void 	 drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+	void 	 drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,int16_t x2, int16_t y2);
+	void 	 fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,int16_t x2, int16_t y2);
 
-	size_t 	 drawString(const uint8_t *st, int16_t x, int16_t y);
+	size_t 	 drawString(const char *st, int16_t x, int16_t y);
 
 	#if __LCD_TEENSY__
 		void setFont(const ILI9341_t3_font_t &font) { _font = &font; }
@@ -153,6 +155,7 @@ private:	// implementation
 	// in myLcd.cpp
 
 	void 	 drawFastVLine(int16_t x, int16_t y, int16_t h);
+	void 	 drawFastHLine(int16_t x, int16_t y, int16_t w);
 	void 	 fillCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t cornername,int16_t delta);
     void 	 drawChar(int16_t x, int16_t y, uint8_t c, uint16_t color, uint16_t bg, uint8_t size, boolean mode);
 
@@ -180,10 +183,7 @@ private:  // in myLcdUnused.cpp which can be ifdef'd out in it's entirety
 	void 	 drawRoundRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint8_t radius);
 	void 	 fillRoundRect(int16_t x1, int16_t y1, int16_t x2,int16_t y2, int16_t radius);
 	void 	 drawCircleHelper(int16_t x0, int16_t y0, int16_t radius, uint8_t cornername);
-	void 	 drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,int16_t x2, int16_t y2);
-	void 	 fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,int16_t x2, int16_t y2);
 	void 	 drawBitmap(int16_t x, int16_t y, int16_t sx, int16_t sy, const uint16_t *data, int16_t scale);
-	void 	 drawFastHLine(int16_t x, int16_t y, int16_t w);
 
 	void 	 drawString(String st, int16_t x, int16_t y);
 	void 	 drawNumber(long num, int16_t x, int16_t y, int16_t length, uint8_t filler, int16_t system);
