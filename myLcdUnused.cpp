@@ -62,25 +62,6 @@ void myLcd::fillScreen(uint8_t r, uint8_t g, uint8_t b)
 }
 
 
-//draw a rectangle
-void myLcd::drawRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
-{
-	int16_t w = x2 - x1 + 1, h = y2 - y1 + 1;
-	if (w < 0)
-	{
-		x1 = x2;
-		w = -w;
-	}
-	if (h < 0)
-	{
-		y1 = y2;
-		h = -h;
-	}
-	drawFastHLine(x1, y1, w);
-  	drawFastHLine(x1, y2, w);
-	drawFastVLine(x1, y1, h);
-	drawFastVLine(x2, y1, h);
-}
 
 //draw a round rectangle
 void myLcd::drawRoundRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint8_t radius)

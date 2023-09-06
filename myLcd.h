@@ -73,6 +73,7 @@ public:
 	void 	 fillCircle(int16_t x, int16_t y, int16_t radius);
 	void 	 drawCircle(int16_t x, int16_t y, int16_t radius);
 	void 	 drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+	void 	 drawRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 	void 	 drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,int16_t x2, int16_t y2);
 	void 	 fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,int16_t x2, int16_t y2);
 
@@ -178,7 +179,6 @@ private:  // in myLcdUnused.cpp which can be ifdef'd out in it's entirety
 
 	uint16_t readPixel(int16_t x, int16_t y);
 	void 	 fillScreen(uint8_t r, uint8_t g, uint8_t b);
-	void 	 drawRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 	void 	 fillRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 	void 	 drawRoundRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint8_t radius);
 	void 	 fillRoundRect(int16_t x1, int16_t y1, int16_t x2,int16_t y2, int16_t radius);
