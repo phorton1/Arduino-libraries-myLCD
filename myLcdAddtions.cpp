@@ -79,8 +79,8 @@ void myLcd::printfvJustified(
 void myLcd::printJustified(
 	int x,
 	int start_y,
-	int w,
-	int h,
+	int width,
+	int height,
 	int just,
 	uint16_t fc,
 	uint16_t bc,
@@ -95,43 +95,64 @@ void myLcd::printJustified(
 		// for calling drawString ...
 
 
-	display(dbg_la,"printJustified(%d,%d,%d,%d,  %d, 0x%04x, 0x%04x, %d, \"%s\")", x, start_y, w, h, just, fc, bc, use_bc, text);
+	display(dbg_la,"printJustified(%d,%d,%d,%d,  %d, 0x%04x, 0x%04x, %d, \"%s\")", x, start_y, width, height, just, fc, bc, use_bc, text);
 
 	setTextColor(fc);
 	if (use_bc)
-		fillRect(x,start_y,w,h,bc);
+		fillRect(x,start_y,width,height,bc);
 
 	int y = start_y + 1;
 	int yoffset = getFontHeight();
 
-	// We clip the string in the X direction by pushing characters to the next line.
-	// Until such a time as we implement actual clipping in drawChar/Strings,
-	// we currently print any characters whose TOPS are IN the rectangle, without regard
-	// if they overflow the rectangle at the bottom.
+	// Will do it's best to print whole words on a line.
+	// If at least a single whole word wont fit,
+	//      the part of the word that will fit will be
+	// 		printed and the word will be continued on the next line
+	// If at least one word has been printed
+	//    will push full words to the next line skipping leading whitespace
 
-	while (*text && y < start_y + h - 1) // while the top of the next line is in the rectangle
+
+	while (*text && y < start_y + height - 1) // while the top of the next line is in the rectangle
 	{
 		int len = 0;
+		int word_len = 0;
 		int pixel_len = 0;
+		int word_pixel_len = 0;
+		const char *word = 0;
 
-		while (*text)
+		while (*text && len < MAX_PRINT_LEN)
 		{
 			char c = *text;
 			int pix = getCharWidth(c);
-
-			// if cr, or the whole character won't fit,
-			// or the unlikely case they tried to print more than 1025 characters,
-			// push the next character to the next line
 
 			if (c == '\n')
 			{
 				text++;
 				break;
 			}
-			else if (pixel_len + pix > w ||
-					len >= MAX_PRINT_LEN)
+			else if (pixel_len + pix > width)
 			{
+				// unable to fit a single full word on the line
+
+				if (!word)
+					break;
+
+				// othewise, write the full word
+				// and set the pointer to the next word
+
+				len = word_len;
+				pixel_len = word_pixel_len;
+				text = word;
 				break;
+			}
+			else if (c == ' ')
+			{
+				// a space ends a word
+				// and leaves word pointing after the space
+
+				word_len = len;
+				word_pixel_len = pixel_len;
+				word = text + 1;
 			}
 
 			text++;
@@ -145,7 +166,7 @@ void myLcd::printJustified(
 		int use_x = x;
 		if (just != LCD_JUST_LEFT)
 		{
-			int xoffset = (w - pixel_len);
+			int xoffset = (width - pixel_len);
 			if (xoffset < 0) xoffset = 0;
 			if (just == LCD_JUST_CENTER)
 				xoffset /= 2;
