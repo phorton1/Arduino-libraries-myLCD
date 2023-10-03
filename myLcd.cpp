@@ -38,6 +38,14 @@ void myLcd::setCursor(int16_t x, int16_t y)
 	_text_y = y;
 }
 
+void myLcd::getCursor(int16_t *x, int16_t *y)
+{
+	*x = _text_x;
+	*y = _text_y;
+}
+
+
+
 void myLcd::setTextColor(uint16_t color)
 {
 	_text_color = color;

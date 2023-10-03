@@ -65,6 +65,7 @@ public:
 
 	void 	 setTextSize(uint8_t s);
 	void     setCursor(int16_t x, int16_t y);
+	void     getCursor(int16_t *x, int16_t *y);
 	void 	 setTextColor(uint16_t color);
 	void 	 setTextBackColor(uint16_t color);
 	void 	 setDrawColor(uint16_t color);
