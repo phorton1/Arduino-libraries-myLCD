@@ -7,11 +7,23 @@
 // This class is derived from myLcd and provides
 // the device specific implementation of low level
 // methods.
+//
+// Initially implemented to support 8 or 16 bit parallel
+// via #defines, I would REALLY like to change this into
+// a RUNTIME object that separates the PORT from the DEVICE,
+// starting with using SPI for the ILI9488 as stolen from
+// teensy ILI9488_t3 library.
+//
+// The higher level drawing routines should be completely
+// abstracted on top of the DEVICE layer.  The DEVICE layer
+// should be abstracted on top of the PORT layer.
+
 
 #pragma once
 
 
 #include "myLcd.h"
+#include <SPI.h>
 
 
 // LCD controller chip identifiers
@@ -62,6 +74,9 @@ typedef struct _lcd_info
 class myLcdDevice : public myLcd
 {
 public:
+
+	myLcdDevice(SPIClass *spi_ptr, uint8_t _CS, uint8_t _DC, uint8_t _RST = 255, uint8_t _MOSI=255, uint8_t _SCLK=255, uint8_t _MISO=255);
+	bool isSPIDevice()  { return spi ? 1 : 0; }
 
 	myLcdDevice(uint16_t model,uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd, uint8_t reset);
 
@@ -123,6 +138,8 @@ private:	// was protected
 
 private:
 
+	SPIClass *spi;
+
 	uint16_t XC;
 	uint16_t YC;
 	uint16_t CC;
@@ -133,7 +150,7 @@ private:
 	uint16_t VL;
 	uint16_t R24BIT;
 
-	#ifdef __LCD_TEENSY__
+	#if __LCD_TEENSY__
 		// prh mod for teensy
 		uint8_t _reset;
 		uint8_t _cs;

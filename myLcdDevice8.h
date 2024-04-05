@@ -9,7 +9,7 @@
 // #define USE_8BIT_SHIELD_ON_MEGA
 
 
-#ifdef __LCD_TEENSY__	// teensy specific
+#if __LCD_TEENSY__	// teensy specific
 
 	// implementations of following methods in myLcdDeviceTeensy.cpp
 

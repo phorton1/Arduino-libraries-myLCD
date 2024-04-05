@@ -6,7 +6,7 @@
 
 #include "myLcd.h"
 
-#ifdef __LCD_TEENSY__
+#if __LCD_TEENSY__
     // only compiles on Teensy
 
 #include <myDebug.h>

@@ -73,9 +73,16 @@ lcd_info current_lcd_info[] = {
 	0x9481,320,480 };
 
 
+
+myLcdDevice::myLcdDevice(SPIClass *spi_ptr, uint8_t _CS, uint8_t _DC, uint8_t _RST /*=255*/, uint8_t _MOSI /*=255*/, uint8_t _SCLK /*=255*/, uint8_t _MISO /*=255*/)
+{
+	spi = spi_ptr;
+}
+
+
 myLcdDevice::myLcdDevice(uint16_t model,uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd, uint8_t reset)
 {
-	#ifdef __LCD_TEENSY__
+	#if __LCD_TEENSY__
 
 		_reset = reset;			// 8
 		_cs = cs;				// 9
@@ -172,7 +179,7 @@ myLcdDevice::myLcdDevice(uint16_t model,uint8_t cs, uint8_t cd, uint8_t wr, uint
 
 
 
-#ifndef __LCD_TEENSY__	// prh teensy mods
+#if !__LCD_TEENSY__	// prh teensy mods
 
 	myLcdDevice::myLcdDevice(int16_t wid,int16_t heg,uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd, uint8_t reset)
 	{

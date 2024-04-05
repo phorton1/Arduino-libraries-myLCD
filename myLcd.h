@@ -30,7 +30,7 @@
 
 #ifdef __AVR__
 	#include <avr/pgmspace.h>
-#elif defined(ESP8266) || defined(__LCD_TEENSY__)
+#elif defined(ESP8266) || __LCD_TEENSY__
 	#include <pgmspace.h>
 #else
 	#define pgm_read_byte(addr) (*(const unsigned char *)(addr))

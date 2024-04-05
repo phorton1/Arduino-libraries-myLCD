@@ -14,7 +14,7 @@
 	// 1k buffer on the stack!!
 	// Note that var-arg formats can only be half of this ?!?
 
-#ifndef __LCD_TEENSY__
+#if __LCD_TEENSY__
 	// prh - already defined in Paul's stuff
 	#define swap(a, b) { int16_t t = a; a = b; b = t; }
 #endif
